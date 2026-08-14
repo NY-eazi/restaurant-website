@@ -5,7 +5,9 @@
 const header = document.querySelector("header");
 
 window.addEventListener("scroll", () => {
-    header.classList.toggle("sticky", window.scrollY > 50);
+    if (header) {
+        header.classList.toggle("sticky", window.scrollY > 50);
+    }
 });
 
 
@@ -85,21 +87,25 @@ const cards = document.querySelectorAll(
     ".dish-card, .testimonial-card, .gallery-item"
 );
 
-const observer = new IntersectionObserver((entries) => {
+if ("IntersectionObserver" in window) {
 
-    entries.forEach(entry => {
+    const observer = new IntersectionObserver((entries) => {
 
-        if (entry.isIntersecting) {
-            entry.target.classList.add("show");
-        }
+        entries.forEach(entry => {
 
+            if (entry.isIntersecting) {
+                entry.target.classList.add("show");
+            }
+
+        });
+
+    }, {
+        threshold: 0.15
     });
 
-}, {
-    threshold: 0.15
-});
+    cards.forEach(card => observer.observe(card));
 
-cards.forEach(card => observer.observe(card));
+}
 
 
 // ================================
@@ -146,3 +152,123 @@ if (menuIcon && navLinks) {
     });
 
 }
+
+
+// ==========================================
+// SUPABASE CONNECTION
+// ==========================================
+
+const SUPABASE_URL =
+    "https://xfbwwrnsqbfumtbhyno.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_yS6FzMjvUW6sDe_gN49icQ_eKHC21Pq";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+// ==========================================
+// LOAD DISHES FROM SUPABASE
+// ==========================================
+
+async function loadDishes() {
+
+    const { data, error } = await supabaseClient
+        .from("dishes")
+        .select("*")
+        .order("id", { ascending: true });
+
+    if (error) {
+
+        console.error(
+            "Error loading dishes:",
+            error
+        );
+
+        return;
+    }
+
+    const dishesContainer =
+        document.querySelector(".dishes-container");
+
+    if (!dishesContainer) {
+
+        console.error(
+            "dishes-container not found."
+        );
+
+        return;
+    }
+
+    // Remove old HTML dishes
+    dishesContainer.innerHTML = "";
+
+    // Create cards from Supabase
+    data.forEach(dish => {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "dish-card";
+
+        card.innerHTML = `
+
+            <div class="dish-image">
+
+                <i class="fa-regular fa-heart favorite"></i>
+
+                <img
+                    src="${dish.image_url}"
+                    alt="${dish.name}"
+                >
+
+                <span class="price">
+                    $${Number(dish.price).toFixed(2)}
+                </span>
+
+            </div>
+
+            <div class="dish-info">
+
+                <div class="rating">
+
+                    <i class="fa-solid fa-star"></i>
+
+                    ${dish.rating}
+
+                </div>
+
+                <h3>
+                    ${dish.name}
+                </h3>
+
+                <p>
+                    ${dish.description}
+                </p>
+
+                <button class="btn">
+
+                    <i class="fa-solid fa-cart-shopping"></i>
+
+                    Order Now
+
+                </button>
+
+            </div>
+        `;
+
+        dishesContainer.appendChild(card);
+
+    });
+
+}
+
+
+// ==========================================
+// START WEBSITE
+// ==========================================
+
+loadDishes();
