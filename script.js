@@ -87,25 +87,21 @@ const cards = document.querySelectorAll(
     ".dish-card, .testimonial-card, .gallery-item"
 );
 
-if ("IntersectionObserver" in window) {
+const observer = new IntersectionObserver((entries) => {
 
-    const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
 
-        entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add("show");
+        }
 
-            if (entry.isIntersecting) {
-                entry.target.classList.add("show");
-            }
-
-        });
-
-    }, {
-        threshold: 0.15
     });
 
-    cards.forEach(card => observer.observe(card));
+}, {
+    threshold: 0.15
+});
 
-}
+cards.forEach(card => observer.observe(card));
 
 
 // ================================
@@ -171,7 +167,7 @@ const supabaseClient = window.supabase.createClient(
 
 
 // ==========================================
-// LOAD DISHES FROM SUPABASE
+// LOAD DISHES FROM DATABASE
 // ==========================================
 
 async function loadDishes() {
@@ -203,10 +199,8 @@ async function loadDishes() {
         return;
     }
 
-    // Remove old HTML dishes
     dishesContainer.innerHTML = "";
 
-    // Create cards from Supabase
     data.forEach(dish => {
 
         const card =
@@ -215,7 +209,6 @@ async function loadDishes() {
         card.className = "dish-card";
 
         card.innerHTML = `
-
             <div class="dish-image">
 
                 <i class="fa-regular fa-heart favorite"></i>
@@ -234,27 +227,17 @@ async function loadDishes() {
             <div class="dish-info">
 
                 <div class="rating">
-
                     <i class="fa-solid fa-star"></i>
-
                     ${dish.rating}
-
                 </div>
 
-                <h3>
-                    ${dish.name}
-                </h3>
+                <h3>${dish.name}</h3>
 
-                <p>
-                    ${dish.description}
-                </p>
+                <p>${dish.description}</p>
 
                 <button class="btn">
-
                     <i class="fa-solid fa-cart-shopping"></i>
-
                     Order Now
-
                 </button>
 
             </div>
@@ -268,7 +251,42 @@ async function loadDishes() {
 
 
 // ==========================================
-// START WEBSITE
+// START
 // ==========================================
 
 loadDishes();
+
+
+// ==========================================
+// TEST SUPABASE CONNECTION
+// ==========================================
+
+async function testSupabaseConnection() {
+
+    const { data, error } =
+        await supabaseClient
+            .from("dishes")
+            .select("*");
+
+    if (error) {
+
+        console.error(
+            "Supabase connection error:",
+            error
+        );
+
+        return;
+    }
+
+    console.log(
+        "Supabase connected successfully!"
+    );
+
+    console.log(
+        "Dishes:",
+        data
+    );
+
+}
+
+testSupabaseConnection();
